@@ -20,11 +20,11 @@ class AccurateRip {
 	private function insertOffsetElement($db, $cdDrive, $correctionOffset, $agreeLevel) {
 
 		//Use a prepared statement to prevent SQL injection
-		$stmt = $db->prepare("INSERT IGNORE INTO cd_drives (name, offset, endorsed) VALUES(:name, :offset, :endorsed)");
+		$stmt = $db->prepare("INSERT IGNORE INTO CD_Drives (name, offset, endorsed) VALUES(:name, :offset, :endorsed)");
 
-		$stmt->bindParam(':name', $cdDrive);
-		$stmt->bindParam(':offset', $correctionOffset);
-		$stmt->bindParam(':endorsed', $agreeLevel);
+		$stmt->bindParam(':name', $cdDrive, PDO::PARAM_STR);
+		$stmt->bindParam(':offset', $correctionOffset, PDO::PARAM_INT);
+		$stmt->bindParam(':endorsed', $agreeLevel, PDO::PARAM_INT);
 
 		if($stmt->execute()) {
 
@@ -35,6 +35,50 @@ class AccurateRip {
 
 			return false;
 		}
+	}
+
+	/**
+	*
+	* Take a string and retrieve the Accurip offset from the SQL database.
+	*
+	* @param string $driveName The string to compare to the database
+	* @return  boolean  if there is no entry or the endormsnet level is below 50% (Can only be false if returned)
+	* @return  integer  giving the offset for the device
+	*
+	*/
+	public function getDriveOffset($driveName) {
+
+		$db = $this->createSQLConnection();
+
+		//TODO: Make the SQL DB connection persist as this function will be used often
+		$stmt = $db->prepare("SELECT offset, endorsed FROM CD_Drives WHERE (name LIKE :driveName)");
+
+		//Add % tags so the querey runs properly
+		$driveName = '%' . $driveName . '%';
+
+		$stmt->bindParam(':driveName', $driveName);
+
+		if($stmt->execute()) {
+
+			$result = $stmt->fetchAll();
+			
+			//If the result doesn't include any data
+			if (empty($result)) {
+
+				return false;
+			}
+
+			//If the endorsment level for this Accurip entry is below 50%, don't use it.
+			if($result[0][1] <= 50) {
+
+				return false;
+			}
+
+			//Otherwise, return the offset
+			return $result[0][0];
+
+		}
+
 	}
 
 
@@ -71,7 +115,8 @@ class AccurateRip {
 			switch($counter) {
 
 				case 0: 
-					$driveName = $element->nodeValue;
+					//Run through and change all multiple whitespace values to just one space
+					$driveName = preg_replace('/\s+/', ' ', $element->nodeValue);
 					$counter++;
 					break;
 
