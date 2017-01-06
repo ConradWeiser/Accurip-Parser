@@ -1,9 +1,5 @@
 <?php
 
-ini_set('display_startup_errors', 1);
-ini_set('display_errors', 1);
-error_reporting(-1);
-
 class AccurateRip {
 
 
@@ -81,7 +77,17 @@ class AccurateRip {
 
 	}
 
-
+/**
+*
+* Given the proper URL to the Accurip Drive Offset page this function 
+* parses the content and turns each entry into a SQL database entry
+* There are no checks to verify that it's loaded the correct page yet
+* so be mindful that you're passing the right URL.
+*
+* This would be most useful in a weekly cronjob to update the list.
+* 
+* @param string $url  The HTML page to parse. Usually: "http://www.accuraterip.com/driveoffsets.htm"
+*/
 	public function parseOffsetPage($url) {
 
 		//Get the webpage of the AccurateRip offset list.
@@ -141,7 +147,6 @@ class AccurateRip {
 
 			//If all of the variables have been populated, check that they're not empty and database them
 			if($driveName != '' && $offset != '' && $endorsed != '') {
-
 
 
 				if ($this->insertOffsetElement($db, $driveName, $offset, $endorsed)) {
