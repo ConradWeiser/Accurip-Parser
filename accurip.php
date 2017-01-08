@@ -38,11 +38,13 @@ class AccurateRip {
 	* Take a string and retrieve the Accurip offset from the SQL database.
 	*
 	* @param string $driveName The string to compare to the database
+	* @param int $endorsementMinimum A parameter which lets you change the lowest acceptable endorsement to be returned.
+	* This parameter defaults to 50% - Make sure to choose a number from the 0-100 range
 	* @return  boolean  if there is no entry or the endormsnet level is below 50% (Can only be false if returned)
 	* @return  integer  giving the offset for the device
 	*
 	*/
-	public function getDriveOffset($driveName) {
+	public function getDriveOffset($driveName, $endorsementMinimum = 50) {
 
 		$db = $this->createSQLConnection();
 
@@ -64,11 +66,13 @@ class AccurateRip {
 				return false;
 			}
 
-			//If the endorsment level for this Accurip entry is below 50%, don't use it.
-			if($result[0][1] <= 50) {
+			//If the endorsment level for this Accurip entry is below the provided minimum parameter, don't use it.
+			if($result[0][1] <= $endorsementMinimum) {
 
 				return false;
 			}
+
+
 
 			//Otherwise, return the offset
 			return $result[0][0];
